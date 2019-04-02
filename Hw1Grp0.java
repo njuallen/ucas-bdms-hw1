@@ -102,7 +102,7 @@ public class Hw1Grp0 {
     for (int i = 0; i < sRecords.size(); i++)
       System.out.println(sRecords.get(i));
 
-    ArrayList<JoinedRecord> joinedRecords = hashJoinRecords(7, rRecords,
+    ArrayList<JoinedRecord> joinedRecords = hashJoinRecords(1024, rRecords,
         sRecords, rJoinColumnIndex, sJoinColumnIndex);
 
     // DEBUG
