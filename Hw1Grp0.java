@@ -10,6 +10,17 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
 
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.MasterNotRunningException;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.ZooKeeperConnectionException;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Put;
+
+import org.apache.log4j.*;
 /**
  *complie Hw1Grp0.java
  *
@@ -105,6 +116,8 @@ public class Hw1Grp0 {
     System.out.println("filteredRecords:");
     for (int i = 0; i < filteredRecords.size(); i++)
       System.out.println(filteredRecords.get(i));
+
+    putRecords(filteredRecords, resultColumns);
   }
 
   private static ArrayList<Record> loadHDFSRecords(String file) throws IOException, URISyntaxException{
@@ -211,7 +224,68 @@ public class Hw1Grp0 {
   }
 
   // store to database
-  private static void storeRecords(ArrayList records) {
+  private static void putRecords(ArrayList<FilteredRecord> records,
+      ResultColumn[] resultColumns)
+    throws MasterNotRunningException, ZooKeeperConnectionException, IOException {
+
+    Logger.getRootLogger().setLevel(Level.WARN);
+
+
+    // Instantiating configuration class
+    Configuration conf = HBaseConfiguration.create();
+
+    // Instantiating HBaseAdmin class
+    HBaseAdmin admin = new HBaseAdmin(conf);
+
+    String tableName = "Result";
+    String columnFamilyName = "res";
+
+    // if table already exists, we drop it
+    if (admin.tableExists(tableName)) {
+      System.out.println("Table exists");
+      System.out.println("Delete table");
+      admin.disableTable(tableName);
+      admin.deleteTable(tableName);
+    }
+
+    // create/recreate the table
+    //creating table descriptor
+    HTableDescriptor htd = new HTableDescriptor(tableName.getBytes());
+
+    //creating column family descriptor
+    HColumnDescriptor family = new HColumnDescriptor(columnFamilyName.getBytes());
+
+    //adding coloumn family to HTable
+    htd.addFamily(family);
+
+    System.out.println("Create table");
+
+    admin.createTable(htd);
+
+    admin.close();
+
+    // put filtered records to database
+    HTable table = new HTable(conf, tableName);
+
+    for (int i = 0; i < records.size(); i++) {
+      FilteredRecord record = records.get(i);
+
+      String rowKey = record.key;
+      String []values = record.record.record;
+
+      Put put = new Put(rowKey.getBytes());
+      for (int j = 0; j < resultColumns.length; j++) {
+        boolean isRFile = resultColumns[j].isRFile;
+        int columnIndex = resultColumns[j].columnIndex;
+        String key = (isRFile ? "R" : "S") + String.format("%d", columnIndex);
+        String value = values[j];
+        System.out.printf("put record: rowKey: %s key: %s value: %s\n",
+            rowKey, key, value);
+        put.add(columnFamilyName.getBytes(), key.getBytes(), value.getBytes());
+      }
+      table.put(put);
+    }
+    table.close();
   }
 }
 
