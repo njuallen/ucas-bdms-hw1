@@ -186,12 +186,16 @@ public class Hw1Grp0 {
     for (int i = 0; i < rRecords.size(); i++) {
       Record r = rRecords.get(i);
       int hash = r.record[rJoinColumnIndex].hashCode() % bucketSize;
+      if (hash < 0)
+        hash += bucketSize;
       rBuckets.get(hash).add(r);
     }
 
     for (int i = 0; i < sRecords.size(); i++) {
       Record s = sRecords.get(i);
       int hash = s.record[sJoinColumnIndex].hashCode() % bucketSize;
+      if (hash < 0)
+        hash += bucketSize;
       sBuckets.get(hash).add(s);
     }
 
