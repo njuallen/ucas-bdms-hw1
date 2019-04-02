@@ -21,19 +21,18 @@ import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 
 import org.apache.log4j.*;
+
 /**
- *complie Hw1Grp0.java
- *
- * javac Hw1Grp0.java
- *
- *execute Hw1Grp0.java
- *
- * java Hw1Grp0
- *
+ * Read two files from HDFS.
+ * Join them and store the final results to HBase.
+ * compile: javac Hw1Grp0
+ * run: java Hw1Grp0 R=rFileName S=sFileName join:RColumn=SColumn res:SColumn,RColumn,RColumn
+ * eg: java Hw1Grp0 R=/hw1/lineitem.tbl S=/hw1/orders.tbl join:R0=S0 res:S1,R1,R5
+ * @author  Zhigang Liu
+ * @version 1.0
+ * @since   2019-04-02
  */
-
 public class Hw1Grp0 {
-
   public static void main(String[] args) throws IOException, URISyntaxException{
     // DEBUG: output all input args
     for (int i = 0; i < args.length; i++)
@@ -121,6 +120,12 @@ public class Hw1Grp0 {
     putRecords(filteredRecords, resultColumns);
   }
 
+   /**
+    * Load records from HDFS
+    * @param file HDFSFileName
+    * @return records array of records
+    * @exception IOException, URISyntaxException
+    */
   private static ArrayList<Record> loadHDFSRecords(String file) throws IOException, URISyntaxException{
 
     Configuration conf = new Configuration();
@@ -142,6 +147,12 @@ public class Hw1Grp0 {
     return v;
   }
 
+   /**
+    * Load records from local file system, used for debugging
+    * @param file LocalFileName
+    * @return records array of records
+    * @exception IOException
+    */
   private static ArrayList<Record> loadLocalRecords(String file) throws IOException {
     FileInputStream in_stream = new FileInputStream(file);
     BufferedReader in = new BufferedReader(new InputStreamReader(in_stream));
@@ -157,6 +168,14 @@ public class Hw1Grp0 {
     return v;
   }
 
+   /**
+    * Join records with naive nested for loops
+    * @param rRecords records from table 1
+    * @param sRecords records from table 2
+    * @param rJoinColumnIndex specify which column in table 1 is used to join
+    * @param sJoinColumnIndex specify which column in table 2 is used to join
+    * @return joinedRecords array of joinedRecords
+    */
   private static ArrayList<JoinedRecord> loopJoinRecords(ArrayList<Record> rRecords,
       ArrayList<Record> sRecords, int rJoinColumnIndex, int sJoinColumnIndex) {
     ArrayList<JoinedRecord> v = new ArrayList<JoinedRecord>();
@@ -172,6 +191,16 @@ public class Hw1Grp0 {
     return v;
   }
 
+   /**
+    * Join records with hash join, first hash records into different buckets,
+    * then do loop join for records in buckets.
+    * @param bucketSize hash bucket size
+    * @param rRecords records from table 1
+    * @param sRecords records from table 2
+    * @param rJoinColumnIndex specify which column in table 1 is used to join
+    * @param sJoinColumnIndex specify which column in table 2 is used to join
+    * @return joinedRecords array of joinedRecords
+    */
   private static ArrayList<JoinedRecord> hashJoinRecords(int bucketSize, ArrayList<Record> rRecords,
       ArrayList<Record> sRecords, int rJoinColumnIndex, int sJoinColumnIndex) {
     // create hash buckets
@@ -207,6 +236,12 @@ public class Hw1Grp0 {
     return v;
   }
 
+   /**
+    * Filter records, only return needed columns, discard others
+    * @param joinedRecords joinedRecords
+    * @param resultColumns the columns that you need
+    * @return filterRecords filteredRecords
+    */
   private static ArrayList filterRecords(ArrayList<JoinedRecord> joinedRecords,
       ResultColumn[] resultColumns) {
     ArrayList<FilteredRecord> v = new ArrayList<FilteredRecord>();
@@ -228,7 +263,12 @@ public class Hw1Grp0 {
     return v;
   }
 
-  // store to database
+   /**
+    * Store final results to hbase
+    * @param records final result
+    * @param resultColumns the columns that you need
+    * @return Nothing
+    */
   private static void putRecords(ArrayList<FilteredRecord> records,
       ResultColumn[] resultColumns)
     throws MasterNotRunningException, ZooKeeperConnectionException, IOException {
