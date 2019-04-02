@@ -87,12 +87,13 @@ public class Hw1Grp0 {
     String hdfsSFile= "hdfs://localhost:9000/" + sFile;
     String localRFile= "/home/bdms/hw1/" + rFile;
     String localSFile= "/home/bdms/hw1/" + sFile;
+    ArrayList rRecords = loadHDFSRecords(hdfsRFile);
+    ArrayList sRecords = loadHDFSRecords(hdfsSFile);
+
     /*
-       ArrayList rRecords = loadRecords(hdfsRFile);
-       ArrayList sRecords = loadRecords(hdfsSFile);
+       ArrayList<Record> rRecords = loadLocalRecords(localRFile);
+       ArrayList<Record> sRecords = loadLocalRecords(localSFile);
        */
-    ArrayList<Record> rRecords = loadLocalRecords(localRFile);
-    ArrayList<Record> sRecords = loadLocalRecords(localSFile);
 
     // DEBUG
     System.out.println("rRecords:");
